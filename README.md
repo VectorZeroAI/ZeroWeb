@@ -6,6 +6,12 @@ to deside wich URLs to give, or what sites to use
 to create a full AI powered report.
 
 
+Installation Instructions:
+Run install_requierements.py
+Copy all the modules from the Repo into the the Foulder.
+Run main.py to start the Programm.
+
+
 Module Index for ZeroNet Networking Tools Suite:
 
 1. Interface Module (HTML/JavaScript - Frontend)
