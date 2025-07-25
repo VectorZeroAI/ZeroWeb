@@ -56,8 +56,8 @@ A Complex of Networking Tools with Absolute Privacy
 """
 
 __version__ = "1.0.0"
-__author__ = "ZeroNet Team" 
-__description__ = "Privacy-focused web scraping and analysis suite"
+__author__ = "VectorZero" 
+__description__ = "Web scraping and Semantic analysis suite"
 
 # Module imports
 from .zeroscraper import ZeroScraper
@@ -107,7 +107,7 @@ The artifact contains the full-featured main.py with:
 """
 
 print("❌ This is a placeholder main.py file!")
-print("📋 Copy the 'ZeroNet Main.py - Entry Point' artifact to this file")
+print("📋 Copy the 'main.py")
 print("🔗 Then run: python main.py --demo")
 '''
     
