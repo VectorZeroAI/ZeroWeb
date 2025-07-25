@@ -23,7 +23,6 @@ Module Index for ZeroNet Networking Tools Suite:
 
 2. ZeroCompiler Module (LLM Report Generator)
 Class: ZeroCompiler
-- __init__(): Initializes compiler with configuration
 - compile_response(query): Main compilation function
 - get_report_history(): Retrieves past report history
 - clear_reports(): Clears all saved reports
@@ -35,7 +34,6 @@ Class: ZeroCompiler
 
 3. ZeroIndex Module (Vector Database Manager)
 Class: ZeroIndex
-- __init__(): Initializes FAISS index
 - process_queue(): Processes queue.json entries
 - search(query): Performs vector similarity search
 - get_urls_by_similarity(): Gets URLs ordered by relevance
@@ -48,7 +46,6 @@ Class: ZeroIndex
 
 4. ZeroOS Module (Sandboxing System)
 Class: ZeroOS
-- __init__(): Initializes sandbox environment
 - start(): Starts all modules
 - shutdown(): Gracefully shuts down system
 - start_module(): Starts specific module
@@ -63,7 +60,6 @@ Class: ZeroOS
 
 5. ZeroSkan Module (Domain Scanner)
 Class: ZeroSkan
-- __init__(): Initializes domain manager
 - add_domain(): Adds domain to scanning list
 - remove_domain(): Removes domain from list
 - scan_all_domains(): Scans all managed domains
@@ -76,7 +72,6 @@ Class: ZeroSkan
 
 6. ZeroScraper Module (Content Extractor)
 Class: ZeroScraper
-- __init__(): Initializes scraping module
 - scrape_page(): Extracts title/snippet from URL
 - scrape_urls(): Scrapes multiple URLs concurrently
 - scrape_from_domain_list(): Processes domain URL lists
@@ -89,7 +84,6 @@ Class: ZeroScraper
 
 7. ZeroSearch Module (Search Engine)
 Class: ZeroSearch
-- __init__(): Initializes search engine
 - search_and_extract(): Performs search + content extraction
 - get_urls_only(): Returns only URLs without content
 - get_search_summary(): Returns search statistics
