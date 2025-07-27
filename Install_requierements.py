@@ -1,3 +1,19 @@
+
+#Discounted
+#Dont use
+#USELLES!!!
+
+
+
+
+
+
+
+
+
+
+
+
 #!/usr/bin/env python3
 """
 ZeroNet Auto-Installer and Setup Script
