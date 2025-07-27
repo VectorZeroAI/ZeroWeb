@@ -1,5 +1,3 @@
-How good is this GUI for this programm?
-
 #!/usr/bin/env python3
 """
 ZeroNet GUI - Graphical User Interface for ZeroNet System
