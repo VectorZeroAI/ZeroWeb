@@ -1,3 +1,11 @@
+#Discounted.
+#DELETED
+#USELLES
+#REMANAT OF PREVIOUS VERSION.
+
+
+
+
 #!/usr/bin/env python3
 """
 ZeroNet - Main Entry Point
