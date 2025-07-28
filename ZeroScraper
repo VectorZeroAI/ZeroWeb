@@ -1,6 +1,7 @@
 #ZeroScraper.py
 
 import json
+import queue as Queue
 import requests
 from bs4 import BeautifulSoup
 import time
@@ -117,47 +118,56 @@ class ZeroScraper:
         except Exception as e:
             self.logger.error(f"Failed to save queue: {e}")
     
+
+
+
+
+
+
     def scrape_urls(self, urls):
-        """
-        Scrape multiple URLs using threading
-        
+        """Scrape multiple URLs using threading
         Args:
             urls (list): List of URLs to scrape
         """
+        # Create a thread-safe queue
+        url_queue = Queue.Queue()
+        for url in urls:
+            url_queue.put(url)
+    
         def worker():
-            while True:
+            while not url_queue.empty():
                 try:
-                    url = url_queue.pop(0)
-                except IndexError:
+                    url = url_queue.get_nowait()
+                    # Skip if already in queue
+                    if url in self.queue_
+                        self.logger.info(f"Skipping already scraped: {url}")
+                        url_queue.task_done()
+                        continue
+                    
+                    scraped_data = self.scrape_page(url)
+                    if scraped_
+                        self.add_to_queue(url, scraped_data)
+                        self.logger.info(f"Added to queue: {url}")
+                    
+                    # Respect server resources
+                         time.sleep(self.delay_between_requests)
+                except Queue.Empty:
                     break
-                
-                # Skip if already in queue
-                if url in self.queue_data:
-                    self.logger.info(f"Skipping already scraped: {url}")
-                    continue
-                
-                scraped_data = self.scrape_page(url)
-                if scraped_data:
-                    self.add_to_queue(url, scraped_data)
-                    self.logger.info(f"Added to queue: {url}")
-                
-                # Respect server resources
-                time.sleep(1)
-        
-        url_queue = urls.copy()
+                finally:
+                    url_queue.task_done()
+    
         threads = []
-        
-        # Create worker threads
         for _ in range(min(self.max_workers, len(urls))):
             thread = threading.Thread(target=worker)
+            thread.daemon = True
             thread.start()
             threads.append(thread)
         
-        # Wait for all threads to complete
-        for thread in threads:
-            thread.join()
-        
-        self.logger.info(f"Scraping completed. Queue now has {len(self.queue_data)} entries")
+        # Wait for all tasks to be processed
+        url_queue.join()
+
+
+
     
     def scrape_from_domain_list(self, domain_urls):
         """
