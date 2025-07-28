@@ -1,4 +1,6 @@
 # ZeroWeb
+NOT YET DONE!!!
+
 A lokal AI powered Web Search engine.
 
 Uses Semantic similarity search of the webpages
