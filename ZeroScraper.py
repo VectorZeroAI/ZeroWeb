@@ -292,34 +292,34 @@ class ZeroScraper:
         }
 
 # Example usage
-if __name__ == "__main__":
-    # Initialize ZeroScraper
-    scraper = ZeroScraper(delay_between_requests=1.0)
+#if __name__ == "__main__":
+#    # Initialize ZeroScraper
+#    scraper = ZeroScraper(delay_between_requests=1.0)
     
     # Example URLs for testing
-    test_urls = [
-        "https://en.wikipedia.org/wiki/Artificial_intelligence",
-        "https://stackoverflow.com/questions/tagged/python",
-        "https://github.com/trending"
-    ]
+#    test_urls = [
+        #"https://en.wikipedia.org/wiki/Artificial_intellige#nce",
+        #"https://stackoverflow.com/questions/tagged/python"#,
+#        "https://github.com/trending"
+#    ]
 
-    print("ZeroScraper - Starting scraping process...")
-    print("NOTE: All operations maintain IP privacy")
+#    print("ZeroScraper - Starting scraping #process...")
+#    print("NOTE: All operations maintain IP #privacy")
 
     # Scrape the URLs
-    scraper.scrape_urls(test_urls)
+#    scraper.scrape_urls(test_urls)
 
     # Display statistics
-    stats = scraper.get_queue_stats()
-    print(f"\nScraping completed!")
-    print(f"Total entries: {stats['total_entries']}")
-    print(f"Domains scraped: {list(stats['domains'].keys())}")
+#    stats = scraper.get_queue_stats()
+#    print(f"\nScraping completed!")
+#    print(f"Total entries: {stats['total_entries']}")
+#    print(f"Domains scraped: {list(stats['domains'].keys())}")
 
     # Show sample queue data
-    queue_data = scraper.get_queue_data()
-    print(f"\nSample queue.json format:")
-    for url, data in list(queue_data.items())[:2]:
-        print(f'"{url}": {{')
-        print(f'  "title": "{data["title"][:50]}..."')
-        print(f'  "snippet": "{data["snippet"][:100]}..."')
-        print("}")
+#    queue_data = scraper.get_queue_data()
+#    print(f"\nSample queue.json format:")
+#    for url, data in list(queue_data.items())[:2]:
+#        print(f'"{url}": {{')
+#        print(f'  "title": "{data["title"][:50]}..."')
+#        print(f'  "snippet": "{data["snippet"][:100]}..."')
+#        print("}")
