@@ -1,5 +1,5 @@
 #ZeroScraper.py
-
+import fcntl
 import json
 import queue as Queue
 import requests
@@ -96,19 +96,55 @@ class ZeroScraper:
         except Exception as e:
             self.logger.error(f"Scraping failed for {url}: {e}")
             return None
+
+
+
+
+
     
-    def add_to_queue(self, url, data):
-        """
-        Add scraped data to queue.json
+
+    def add_to_queue(self, url, scraped_data):
+        try:
+            # Create lock file
+            lock_file = f"{self.queue_file}.lock"
+            lock_fd = os.open(lock_file, os.O_CREAT | os.O_RDWR)
         
-        Args:
-            url (str): Source URL
-            data (dict): Scraped data containing title and snippet
-        """
-        with self.lock:
-            self.queue_data[url] = data
-            self._save_queue()
+            # Acquire exclusive lock
+            fcntl.flock(lock_fd, fcntl.LOCK_EX)
+        
+            try:
+                # Load existing queue
+                if os.path.exists(self.queue_file):
+                    with open(self.queue_file, 'r') as f:
+                        queue_data = json.load(f)
+                else:
+                    queue_data = {}
+                
+                # Add new entry
+                queue_data[url] = {
+                    'title': scraped_data['title'],
+                    'snippet': scraped_data['snippet']
+                }
+            
+                # Save updated queue
+                with open(self.queue_file, 'w') as f:
+                    json.dump(queue_data, f, indent=2)
+                
+                self.logger.info(f"Queue saved with {len(queue_data)} entries")
+            finally:
+                # Release lock
+                fcntl.flock(lock_fd, fcntl.LOCK_UN)
+                os.close(lock_fd)
+                if os.path.exists(lock_file):
+                    os.unlink(lock_file)
+                
+        except Exception as e:
+            self.logger.error(f"Failed to save queue: {e}")
     
+
+
+
+
     def _save_queue(self):
         """Save queue data to queue.json file"""
         try:
