@@ -7,9 +7,13 @@ By default, it indexes "Wikipedia, arXiv, github, reddit"
 
 ---
 
-
 System Architecture:
 ZeroScraper.py : Provides funktions: "get_snippet(URL);get_fullpage(URL);get_URL_list(domain)"
+
+---
+
+Cofig.py :
+Has all the configurations in it.
 
 ---
 
@@ -59,6 +63,10 @@ and
 
 reconstruct_index.
 
+"update_global_raw_json" checks for new scraped data, and gets it in.
+
+"reconstruct_index" reconstructs the FAISS index based on the global_raw.json
+
 ---
 
 ZeroSearch++.py:
@@ -75,4 +83,6 @@ The funktion "report(List_of_URLs)" uses the funktions provided by "ZeroScraper.
 ZeroMain.py
 
 Is the main part running all the funktions and interacting with the user via GUI.
+
+
 
