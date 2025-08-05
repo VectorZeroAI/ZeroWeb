@@ -2,6 +2,9 @@
 A lokal Semantic Search engine + web Crawler.
 
 This programm uses a web crawler to index the user defined domains.
+
+THE APP DOESNT PROVIDE ANY INTERNET IDENTITY CONSEALMENT, USERS PRIVASY IS USERS RESPONSIBILITY!!
+
 By default, it indexes "Wikipedia, arXiv, github, reddit"
 
 
@@ -83,6 +86,26 @@ The funktion "report(List_of_URLs)" uses the funktions provided by "ZeroScraper.
 ZeroMain.py
 
 Is the main part running all the funktions and interacting with the user via GUI.
+
+The GUI has 2 tabs.
+
+One tab is called "Index", the other one is called "Search".
+
+The "Search" tab has:
+1. A field where the text is shown.
+2. A switch that turns the AI mode on and off.
+If the AI mode is on, then the report is provided via OpenRouter API. If the AI mode is off, then only the URLs are provided.
+3. A filed to put the users querrie in. 
+4. A button to start the search.
+
+The "Index" tab has:
+1. A field where the domains are shown, and can be edited. 
+2. A button to start the Idexing.
+3. A field to edit the maximal threads amount.
+4. A remeinder pop up that the user's privasy is users consern, and that the app "Funking doesnt care".
+5. A progress bar that roughly estimates how done the idexing is.
+
+
 
 
 
