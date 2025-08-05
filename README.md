@@ -54,21 +54,21 @@ And then the threadd just closes itself.
 
 ZeroIndex.py:
 
-Takes all the raw(numer).json files contents and compiles them into one big Global_raw.json .
+Takes all the raw(numer).json files contents and compiles them into one big "Global_raw" SQLite Data base.
 
-Then all the contents of Global_raw.json are embedded into a FAISS Index, with the URL as the label of the node.
+Then all the contents of "Global_raw" are embedded into a FAISS Index, with the URL as the label of the node.
 
 Exposes funktions:
 
-update_global_raw_json
+update_global_raw
 
 and
 
 reconstruct_index.
 
-"update_global_raw_json" checks for new scraped data, and gets it in.
+"update_global_raw" checks for new scraped data, and gets it in.
 
-"reconstruct_index" reconstructs the FAISS index based on the global_raw.json
+"reconstruct_index" reconstructs the FAISS index based on the "global_raw" DB.
 
 ---
 
