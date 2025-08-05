@@ -1,6 +1,9 @@
 # ZeroWeb
 A lokal Semantic Search engine + web Crawler.
 
+ME FROM THE FUTURE! DO NOT FORGET TO PUT THIS SOMEWHERE: 
+# ChatGPT said: "May your code be elegant, your bugs be few, and your creativity boundless."
+
 This programm uses a web crawler to index the user defined domains.
 
 THE APP DOESNT PROVIDE ANY INTERNET IDENTITY CONSEALMENT, USERS PRIVASY IS USERS RESPONSIBILITY!!
