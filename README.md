@@ -1,9 +1,6 @@
 # ZeroWeb
 A lokal Semantic Search engine + web Crawler.
 
-ME FROM THE FUTURE! DO NOT FORGET TO PUT THIS SOMEWHERE: 
-# ChatGPT said: "May your code be elegant, your bugs be few, and your creativity boundless."
-
 This programm uses a web crawler to index the user defined domains.
 
 THE APP DOESNT PROVIDE ANY INTERNET IDENTITY CONSEALMENT, USERS PRIVASY IS USERS RESPONSIBILITY!!
@@ -60,6 +57,8 @@ ZeroIndex.py:
 Takes all the raw(numer).json files contents and compiles them into one big "Global_raw" SQLite Data base.
 
 Then all the contents of "Global_raw" are embedded into a FAISS Index, with the URL as the label of the node.
+
+The FAISS index used is:"IVF4096,PQ32x8 with nprobe=8" + memory mapping.
 
 Exposes funktions:
 
