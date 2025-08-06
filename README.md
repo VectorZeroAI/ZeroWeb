@@ -30,19 +30,15 @@ Then starts to Index the links.
 Uses safe threadding via: 
 Starting threads that get their job done and close themselfs automaticly. 
 
-Each thread gets a [list(the threadds numer).json] file with [the total amount of links / the amount of threadds] links to get snippets + headders from.
+All the URLs are saved into a SQLite DB as IDs and can be asigned the snippets that are scraped from a URL.
 
-It then gets the snippets and the headders from each URL one by one.
+Each thread gets its portion of the SQLite to fill.
 
-These are then saved in the [raw(the threadds numer).json[ file under the URL as the titel. The format looks like that:
+SQLite works in WAL mode, and each thread has a 2 seconds cooldown between scrapes.
 
-{
-  "https://example.com/page1": {
-    "title": "Example Title",
-    "snippet": "Example snippet text goes here."
-  },
-  ...
-}
+The thread then gets the snippets and the headders from each URL one by one.
+
+These are then saved into the SQLite under the URL as the ID
 
 When the work is over, the [list(the threadds numer).json] and the [raw(the threadds numer.json)] are compared to make shure that all the links were scraped. 
 
