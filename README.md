@@ -89,6 +89,11 @@ ZeroMain.py
 
 Is the main part running all the funktions and interacting with the user via GUI.
 
+The GUI is directly wired to the funktions and prozesses, directly controlling them.
+All the loops are directly wired and configurated by the GUI, and because the code is in One file, it is possible to do so effectively. 
+
+IMPORTANT: THE MAIN CODE NEEDS CLEAR COMMENTS AND SEPARATIONS BETWEEN PARTS, ELSE IT IS GONNA BECOME UNMANAGEBLE MESS!!!
+
 The GUI has 2 tabs.
 
 One tab is called "Index", the other one is called "Search".
@@ -106,6 +111,7 @@ The "Index" tab has:
 3. A field to edit the maximal threads amount.
 4. A remeinder pop up that the user's privasy is users consern, and that the app "Funking doesnt care".
 5. A progress bar that roughly estimates how done the idexing is.
+6. A Button to Stop the search.
 
 
 
