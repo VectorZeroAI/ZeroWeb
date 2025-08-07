@@ -22,38 +22,32 @@ Has all the configurations in it.
 
 ZeroSkan.py :
 
-Skans the web via using the funktions from the Scraper.py
+Is the skaner library. Uses PostgreSQL DB to save all the scraped data. 
 
-First gets the list of domains.
-Then creates a list of links for every one of the domains.
-Then starts to Index the links.
+Creates a PostgreSQL DB.
+Inputs all the URLs got from all the domains in the config via "get_URL_list" as the first thing in a row. 
 
-Uses safe threadding via: 
-Starting threads that get their job done and close themselfs automaticly. 
+Then, launches the configurated by config.py amount of scraper threadds, that each get a part of the DB to fill out. 
 
-All the URLs are saved into a SQLite DB as IDs and can be asigned the snippets that are scraped from a URL.
+These threads scrape the headders and snippets from URLs and input them as the second thing in the same row where the corresponding URL is.
 
-Each thread gets its portion of the SQLite to fill.
+The thread can be shut down at any moment without crashing and without loosing any data.
 
-SQLite works in WAL mode, and each thread has a 2 seconds cooldown between scrapes.
+Exposes funktions:
+initDB(path)
 
-The thread then gets the snippets and the headders from each URL one by one.
+start_scraper_thread
 
-These are then saved into the SQLite under the URL as the ID
+end_scraping
 
-When the work is over, the [list(the threadds numer).json] and the [raw(the threadds numer.json)] are compared to make shure that all the links were scraped. 
+end scraping saves the DB and shuts dows all the threads.
 
-If not all were scraped, then the left over ones are scraped, and then again and again untill all of them are scraped.
-
-And then the threadd just closes itself.
 
 ---
 
 ZeroIndex.py:
 
-Takes all the raw(numer).json files contents and compiles them into one big "Global_raw" SQLite Data base.
-
-Then all the contents of "Global_raw" are embedded into a FAISS Index, with the URL as the label of the node.
+Takes the data from the DB and cretes a FAISS Index with it. URLs are made lables in the list
 
 The FAISS index used is:"IVF4096,PQ32x8 with nprobe=8" + memory mapping.
 
