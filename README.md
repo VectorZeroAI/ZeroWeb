@@ -21,6 +21,7 @@ Has all the configurations in it.
 ---
 
 ZeroSkan.py :
+
 Skans the web via using the funktions from the Scraper.py
 
 First gets the list of domains.
@@ -83,13 +84,31 @@ The funktion "report(List_of_URLs)" uses the funktions provided by "ZeroScraper.
 
 ZeroMain.py
 
-Is the main part running all the funktions and interacting with the user via GUI.
+Has State oriented programminng style.
 
-The GUI is directly wired to the funktions and prozesses, directly controlling them.
-All the loops are directly wired and configurated by the GUI, and because the code is in One file, it is possible to do so effectively. 
+Has 4 states:
+"Halt" state
+"Search" state
+"Index" state
+"Save/shutdown" state
 
-IMPORTANT: THE MAIN CODE NEEDS CLEAR COMMENTS AND SEPARATIONS BETWEEN PARTS, ELSE IT IS GONNA BECOME UNMANAGEBLE MESS!!!
+"Halt state" is the state of waiting for something, like commands or parameters.
 
+
+"Search State" is the state that allows to search and retrive URLs or compile full AI powered reports.
+
+
+"Index State" is the state in wich the programm indexes the internet.
+
+"Save/shutdown" state is the state that safely saves everything to disk and shuts down the whole prozess with all the threads.
+
+
+
+
+
+---
+
+ZeroGUI.py
 The GUI has 2 tabs.
 
 One tab is called "Index", the other one is called "Search".
@@ -108,6 +127,24 @@ The "Index" tab has:
 4. A remeinder pop up that the user's privasy is users consern, and that the app "Funking doesnt care".
 5. A progress bar that roughly estimates how done the idexing is.
 6. A Button to Stop the search.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ZeroSkan.py architecture backup (if I fuck up)
 
 
 
