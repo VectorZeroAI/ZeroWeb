@@ -16,13 +16,13 @@ ZeroScraper.py : Provides funktions: "get_snippet(URL);get_fullpage(URL);get_URL
 ---
 
 Cofig.py :
-Has all the configurations in it.
+Has all the configurations and keys in it.
 
 ---
 
 ZeroSkan.py :
 
-Is the skaner library. Uses PostgreSQL DB to save all the scraped data. 
+Is the skaner. Uses PostgreSQL DB to save all the scraped data. 
 
 Creates a PostgreSQL DB.
 Inputs all the URLs got from all the domains in the config via "get_URL_list" as the first thing in a row. 
@@ -31,37 +31,30 @@ Then, launches the configurated by config.py amount of scraper threadds, that ea
 
 These threads scrape the headders and snippets from URLs and input them as the second thing in the same row where the corresponding URL is.
 
-The thread can be shut down at any moment without crashing and without loosing any data.
+The thread can be shut down at any moment without crashing and without loosing any data, because its loop has a grasefull shutdown mechanism.
 
 Exposes funktions:
-initDB(path)
+"initDB(path)"
 
-start_scraper_thread
+"start_scraper_thread"
 
-end_scraping
+"end_scraping"
 
-end scraping saves the DB and shuts dows all the threads.
-
+"end_scraping" saves the DB and shuts dows all the threads.
 
 ---
 
 ZeroIndex.py:
 
-Takes the data from the DB and cretes a FAISS Index with it. URLs are made lables in the list
+Takes the data from the DB and cretes a FAISS Index with it. URLs are made lables in the list.
 
 The FAISS index used is:"IVF4096,PQ32x8 with nprobe=8" + memory mapping.
 
 Exposes funktions:
 
-update_global_raw
+"reconstruct_index"
 
-and
-
-reconstruct_index.
-
-"update_global_raw" checks for new scraped data, and gets it in.
-
-"reconstruct_index" reconstructs the FAISS index based on the "global_raw" DB.
+"reconstruct_index" reconstructs the FAISS index based on the DB.
 
 ---
 
