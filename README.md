@@ -48,13 +48,25 @@ ZeroIndex.py:
 
 Takes the data from the DB and cretes a FAISS Index with it. URLs are made lables in the list.
 
+The Snippet + headder are taken from the DB and embedded. The embedding is saved to the FAISS index and dubbed to the third collum of corresponding row.
+
 The FAISS index used is:"IVF4096,PQ32x8 with nprobe=8" + memory mapping.
 
-Exposes funktions:
+Exposes funktion:
 
 "reconstruct_index"
 
-"reconstruct_index" reconstructs the FAISS index based on the DB.
+"reconstruct_index" follows this pseudocode:
+
+
+For each row in the DB: 
+    if the collum 3 has the embeding stored in it:
+        take the value and input it into FAISS index
+    elif the collum 2 has text in it:
+        take the text, embedd it, store the embedding into the collum 3 and into the FAISS index
+    else
+        skip
+
 
 ---
 
