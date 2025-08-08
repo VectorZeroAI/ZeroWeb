@@ -111,6 +111,29 @@ The funktion "search(querrie;amount)" searches the FAISS index and gets the [amo
 
 The funktion "report(List_of_URLs)" uses the funktions provided by "ZeroScraper.py" to get the full page text of each of the URLs from the list, and then uses OpenRouter API to call the model: "tngtech/deepseek-r1t2-chimera:free" to compile a report about the contents of the pages, that captures all the facts from the information in a clear and structured report.
 
+report(List_of_URLs) pseudocode:
+
+
+def get_text_for_report(List_of_URLs):
+    For each URL in List_of_URLs:
+        if collum 5 in the row corresponding to that link is empty:
+            get_full_text(URL)
+            save the full text to the columm 5 of the row corresponding to the link.
+        else:
+            get the text from the collum 5 of the corresponding to the URL row.
+    return (full text)
+
+Text = get_text_for_report(List_of_URLs)
+
+if USE_API = 0:
+    send to the lokal model:
+        "Compile the following information into a comprehensive report [Text]"
+
+else:
+    send this to the model in config via openrouter API:
+        "Compile the following information into a comprehensive report [Text]"
+
+
 ---
 
 #ZeroMain.py
