@@ -50,7 +50,10 @@ Is the skaner. Uses PostgreSQL DB to save all the scraped data.
 Creates a PostgreSQL DB.
 Inputs all the URLs got from all the domains in the config via "get_URL_list" as the first thing in a row. 
 
-Then, launches the configurated by config.py amount of scraper threadds, that each get a part of the DB to fill out. 
+Then, launches the configurated by config.py amount of scraper threadds, that each get a part of the DB to fill out.
+Also utilises multiprozessing for to offload the scraping to the config defined amount of cores.
+
+The funktion "start_scraping_core" starts a full prozess for enouther core, and fills it with the config defined amount of threads.
 
 These threads scrape the headders and snippets from URLs and input them as the second thing in the same row where the corresponding URL is.
 
@@ -59,20 +62,25 @@ The thread can be shut down at any moment without crashing and without loosing a
 Exposes funktions:
 "initDB(path)"
 
-"start_scraper_thread"
+"start_scraping_prozess(list of rows)"
 
 "end_scraping"
 
 "end_scraping" saves the DB and shuts dows all the threads.
 
-scraper threadd pseudocode:
 
-For each row in [the list of allocated rows]
-    get_snippet(URL)
-    save it into the second colum
-    if shutdown request = 1
-        shut down
-    time.sleep(get from collum 4)
+start_scraper_prozess pseudocode:
+
+def start_scraper_prozess(list of rows):
+
+start enouther prozess, offload it to enouther core.
+ 
+    For each row in [list of rows]
+        get_snippet(URL)
+        save it into the second collum
+        if shutdown request = 1
+            shut down
+        time.sleep(get from collum 4)
 
 ---
 
@@ -84,7 +92,11 @@ The Snippet + headder are taken from the DB and embedded. The embedding is saved
 
 The FAISS index used is:"IVF4096,PQ32x8 with nprobe=8" + memory mapping.
 
-Exposes funktion:
+Exposes funktions:
+
+"save_index"
+
+"load_index"
 
 "reconstruct_index"
 
@@ -181,24 +193,6 @@ The "Index" tab has:
 4. A remeinder pop up that the user's privasy is users consern, and that the app "Funking doesnt care".
 5. A progress bar that roughly estimates how done the idexing is.
 6. A Button to Stop the search.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-ZeroSkan.py architecture backup (if I fuck up)
 
 
 
