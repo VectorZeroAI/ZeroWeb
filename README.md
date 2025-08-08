@@ -42,6 +42,15 @@ Exposes funktions:
 
 "end_scraping" saves the DB and shuts dows all the threads.
 
+scraper threadd pseudocode:
+
+For each row in [the list of allocated rows]
+    get_snippet(URL)
+    save it into the second colum
+    if shutdown request = 1
+        shut down
+    time.sleep(2)
+
 ---
 
 ZeroIndex.py:
