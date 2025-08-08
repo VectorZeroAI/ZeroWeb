@@ -10,17 +10,40 @@ By default, it indexes "Wikipedia, arXiv, github, reddit"
 
 ---
 
-System Architecture:
-ZeroScraper.py : Provides funktions: "get_snippet(URL);get_fullpage(URL);get_URL_list(domain)"
+#System Architecture:
+
+--- 
+
+#ZeroScraper.py : 
+Provides funktions: "get_snippet(URL);get_fullpage(URL);get_URL_list(domain)"
+
+get_URL_list(domain) pseudocode:
+
+Get the list of URLs for the domain
+Try:
+    get the robots.txt
+Expect exeptions as e
+If the robots.txt present:
+    For each URL in [list of URLs]:
+        check if robots.txt allows to scrape, if not, delete from the list.
+
+Save the list of links into the DB with each link getting a separate row and first collum.
+
+Try:
+    Get the crawling delay from the robots.txt
+expect exeptions as e
+
+if the delay is present:
+    put it into the 4 columm for each URL in the domain.
 
 ---
 
-Cofig.py :
+#Cofig.py :
 Has all the configurations and keys in it.
 
 ---
 
-ZeroSkan.py :
+#ZeroSkan.py :
 
 Is the skaner. Uses PostgreSQL DB to save all the scraped data. 
 
@@ -53,7 +76,7 @@ For each row in [the list of allocated rows]
 
 ---
 
-ZeroIndex.py:
+#ZeroIndex.py:
 
 Takes the data from the DB and cretes a FAISS Index with it. URLs are made lables in the list.
 
@@ -79,7 +102,7 @@ For each row in the DB:
 
 ---
 
-ZeroSearch++.py:
+#ZeroSearch++.py:
 
 Exposes funktions: 
 Search(querrie;amount);report(List_of_URLs)
@@ -90,7 +113,7 @@ The funktion "report(List_of_URLs)" uses the funktions provided by "ZeroScraper.
 
 ---
 
-ZeroMain.py
+#ZeroMain.py
 
 Has State oriented programminng style.
 
@@ -116,7 +139,7 @@ Has 4 states:
 
 ---
 
-ZeroGUI.py
+#ZeroGUI.py
 The GUI has 2 tabs.
 
 One tab is called "Index", the other one is called "Search".
