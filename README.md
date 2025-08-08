@@ -72,7 +72,7 @@ For each row in [the list of allocated rows]
     save it into the second colum
     if shutdown request = 1
         shut down
-    time.sleep(2)
+    time.sleep(get from collum 4)
 
 ---
 
