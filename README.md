@@ -174,9 +174,11 @@ Pseudocode for this programm:
 
 #imports
 
+RUN_HALT = 0
+RUN_INDEX = 0
+RUN_SEARCH = 0
+
 State = "HALT" 
-
-
 
 class main:
     def init #(whatever comes into there)
@@ -189,7 +191,7 @@ class main:
           if state = "HALT" is False:
             RUN_HALT == "0"
       elif State = "INDEX":
-        RUN_INDEY == "1"
+        RUN_INDEX == "1"
         while RUN_INDEX = "1":
           #indexing loop plaseholder
           if State = "INDEX" is False:
@@ -212,8 +214,11 @@ class main:
     
     
     def change_state(state_new): 
-      #you input new state here, and the state variable becomes the thing you inputed. This thing should be callable by the GUI.
-    
+      If state_new is in [HALT;SEARCH;SAVE/SHUTDOWN;INDEX]:
+        State == state_new
+        return "done"
+      else:
+        return "invalid input"
     def insert_querrie(querrie):
       #a funktion that can be called by GUI to give the querrie to the search state's loop.
     
