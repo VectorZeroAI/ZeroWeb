@@ -176,23 +176,28 @@ Pseudocode for this programm:
 
 State = "HALT" 
 
+
+
 class main:
     def init #(whatever comes into there)
     
     def loop:
       if State = "HALT":
-        while State = "HALT":
+        RUN_HALT == "1"
+        while RUN_HALT = "1":
           time.sleep(1)
           if state = "HALT" is False:
-            #do nothing
+            RUN_HALT == "0"
       elif State = "INDEX":
-        while State = "INDEX":
+        RUN_INDEY == "1"
+        while RUN_INDEX = "1":
           #indexing loop plaseholder
           if State = "INDEX" is False:
-            #save everything
+            RUN_INDEX == "0"
             
       elif State = "SEARCH":
-        while State = "SEARCH":
+        RUN_SEARCH == "1"
+        while RUN_SEARCH = "1":
           #search algoritm:
           #1 say that you need a querrie
           #2 wait until you get it
@@ -200,7 +205,7 @@ class main:
           #4 return results
           #5 return to step 1
           if State = "SEARCH" is False:
-            #do nothing
+            RUN_SEARCH == "0"
       
       elif State = "SAVE/SHUTDOWN":
         #Save and shutdown
@@ -212,6 +217,8 @@ class main:
     def insert_querrie(querrie):
       #a funktion that can be called by GUI to give the querrie to the search state's loop.
     
+
+
 
 IMPORTANT: The comunation with GUI will be handeled via specialised for each comunication type funkitons, similar to how "change_state" and "insert_querrie" are made.
 The ZeroMain.py module will also call comunication funktions from ZeroGUI.py, so place some placeholders there until the ZeroGUI.py is done.
