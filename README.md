@@ -168,6 +168,55 @@ Has 4 states:
 
 "Save/shutdown" state is the state that safely saves everything to disk and shuts down the whole prozess with all the threads.
 
+Pseudocode for this programm:
+
+#ZeroMain.py
+
+#imports
+
+State = "HALT" 
+
+class main:
+    def init #(whatever comes into there)
+    
+    def loop:
+      if State = "HALT":
+        while State = "HALT":
+          time.sleep(1)
+          if state = "HALT" is False:
+            #do nothing
+      elif State = "INDEX":
+        while State = "INDEX":
+          #indexing loop plaseholder
+          if State = "INDEX" is False:
+            #save everything
+            
+      elif State = "SEARCH":
+        while State = "SEARCH":
+          #search algoritm:
+          #1 say that you need a querrie
+          #2 wait until you get it
+          #3 perform search
+          #4 return results
+          #5 return to step 1
+          if State = "SEARCH" is False:
+            #do nothing
+      
+      elif State = "SAVE/SHUTDOWN":
+        #Save and shutdown
+    
+    
+    def change_state(state_new): 
+      #you input new state here, and the state variable becomes the thing you inputed. This thing should be callable by the GUI.
+    
+    def insert_querrie(querrie):
+      #a funktion that can be called by GUI to give the querrie to the search state's loop.
+    
+
+IMPORTANT: The comunation with GUI will be handeled via specialised for each comunication type funkitons, similar to how "change_state" and "insert_querrie" are made.
+The ZeroMain.py module will also call comunication funktions from ZeroGUI.py, so place some placeholders there until the ZeroGUI.py is done.
+
+
 ---
 
 #ZeroGUI.py
