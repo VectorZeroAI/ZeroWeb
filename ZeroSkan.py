@@ -72,22 +72,39 @@ def insert_urls_into_db(domains):
 
 def get_unscraped_rows(batch_size=1000):
     """
-    Fetches a batch of unscraped URLs from the DB.
+    Fetches a batch of unscraped URLs from the DB using FOR UPDATE SKIP LOCKED.
+    This ensures that multiple processes don't work on the same URLs.
     """
     conn = psycopg2.connect(**DATABASE_CONFIG)
     cursor = conn.cursor(cursor_factory=RealDictCursor)
-
-    cursor.execute("""
-        SELECT id, url, crawl_delay
-        FROM scraped_data
-        WHERE snippet IS NULL
-        LIMIT %s
-    """, (batch_size,))
-
-    rows = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    return rows
+    
+    try:
+        # Start a transaction
+        cursor.execute("BEGIN;")
+        
+        # Select unscraped rows with locking
+        cursor.execute("""
+            SELECT id, url, crawl_delay
+            FROM scraped_data
+            WHERE snippet IS NULL
+            ORDER BY id
+            LIMIT %s
+            FOR UPDATE SKIP LOCKED
+        """, (batch_size,))
+        
+        rows = cursor.fetchall()
+        
+        # Commit the transaction to release locks
+        conn.commit()
+        
+        return rows
+    except Exception as e:
+        logger.error(f"Error fetching unscraped rows: {e}")
+        conn.rollback()
+        return []
+    finally:
+        cursor.close()
+        conn.close()
 
 
 def update_snippet_in_db(row_id, snippet):
@@ -105,6 +122,7 @@ def update_snippet_in_db(row_id, snippet):
         conn.commit()
     except Exception as e:
         logger.error(f"Error updating snippet for row {row_id}: {e}")
+        conn.rollback()
     finally:
         cursor.close()
         conn.close()
@@ -177,9 +195,60 @@ def start_scraping_process(rows):
     return process
 
 
+def continuous_scraping_worker():
+    """
+    Worker function that continuously fetches batches and processes them.
+    This replaces the static batch approach for better dynamic load balancing.
+    """
+    while not shutdown_event.is_set():
+        # Fetch a new batch of unscraped rows
+        rows = get_unscraped_rows(batch_size=100)
+        
+        if not rows:
+            logger.info("No more unscraped rows found. Waiting before retry...")
+            time.sleep(5)  # Wait before retrying
+            continue
+            
+        logger.info(f"Processing batch of {len(rows)} URLs")
+        
+        # Process this batch
+        url_queue = Queue()
+        for row in rows:
+            url_queue.put(row)
+
+        # Start threads for this batch
+        threads = []
+        for _ in range(SCRAPING_THREADS_PER_PROCESS):
+            t = threading.Thread(target=scrape_worker, args=(url_queue,))
+            t.start()
+            threads.append(t)
+
+        # Wait for completion or shutdown
+        try:
+            url_queue.join()
+        except KeyboardInterrupt:
+            shutdown_event.set()
+
+        # Join threads
+        for t in threads:
+            t.join()
+            
+        if shutdown_event.is_set():
+            break
+
+
+def start_scraping_process_continuous():
+    """
+    Starts a process that continuously fetches and processes batches.
+    """
+    process = mp.Process(target=continuous_scraping_worker)
+    process.start()
+    return process
+
+
 def start_scraping(domains):
     """
-    Main scraping orchestrator.
+    Main scraping orchestrator using continuous batch processing.
     """
     logger.info("Starting scraping process...")
     initDB()
@@ -187,23 +256,15 @@ def start_scraping(domains):
     # Insert URLs into DB
     insert_urls_into_db(domains)
 
-    # Fetch all unscraped rows
-    rows = get_unscraped_rows()
-
-    if not rows:
-        logger.info("No rows to scrape.")
-        return
-
-    # Split rows into chunks for multiprocessing
-    chunk_size = max(1, len(rows) // MAX_SCRAPING_PROCESSES)
-    row_chunks = [rows[i:i + chunk_size] for i in range(0, len(rows), chunk_size)]
-
+    # Start continuous scraping processes
     processes = []
-    for chunk in row_chunks:
-        p = start_scraping_process(chunk)
+    for _ in range(MAX_SCRAPING_PROCESSES):
+        p = start_scraping_process_continuous()
         processes.append(p)
+        time.sleep(0.1)  # Small delay to stagger process starts
 
     try:
+        # Wait for all processes
         for p in processes:
             p.join()
     except KeyboardInterrupt:
