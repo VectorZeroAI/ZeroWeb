@@ -168,10 +168,6 @@ Has 4 states:
 
 "Save/shutdown" state is the state that safely saves everything to disk and shuts down the whole prozess with all the threads.
 
-
-
-
-
 ---
 
 #ZeroGUI.py
