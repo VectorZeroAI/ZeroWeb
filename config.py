@@ -16,3 +16,11 @@ DATABASE_CONFIG = {
 
 SCRAPING_THREADS_PER_PROCESS = THREAD_AMOUNT_PER_CORE
 MAX_SCRAPING_PROCESSES = CORE_AMOUNT
+
+
+# FAISS index configuration
+FAISS_INDEX_PATH = 'zeroweb_index.faiss'
+FAISS_INDEX_CONFIG = {
+    'factory': 'IVF4096,PQ32x8',
+    'nprobe': 8
+}
