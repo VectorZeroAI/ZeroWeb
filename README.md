@@ -172,56 +172,70 @@ Pseudocode for this programm:
 
 #ZeroMain.py
 
-#imports
+State = "HALT"
 
-RUN_HALT = 0
-RUN_INDEX = 0
-RUN_SEARCH = 0
+class Main:
+    def __init__(self):
+        self.state = State
+        self.running = True
+        self.current_query = None
 
-State = "HALT" 
+    def loop(self):
+        while self.running:
+            if self.state == "HALT":
+                self.handle_halt()
+            elif self.state == "INDEX":
+                self.handle_index()
+            elif self.state == "SEARCH":
+                self.handle_search()
+            elif self.state == "SAVE_SHUTDOWN":
+                self.handle_save_shutdown()
 
-class main:
-    def init #(whatever comes into there)
-    
-    def loop:
-      if State = "HALT":
-        RUN_HALT == "1"
-        while RUN_HALT = "1":
-          time.sleep(1)
-          if state = "HALT" is False:
-            RUN_HALT == "0"
-      elif State = "INDEX":
-        RUN_INDEX == "1"
-        while RUN_INDEX = "1":
-          #indexing loop plaseholder
-          if State = "INDEX" is False:
-            RUN_INDEX == "0"
-            
-      elif State = "SEARCH":
-        RUN_SEARCH == "1"
-        while RUN_SEARCH = "1":
-          #search algoritm:
-          #1 say that you need a querrie
-          #2 wait until you get it
-          #3 perform search
-          #4 return results
-          #5 return to step 1
-          if State = "SEARCH" is False:
-            RUN_SEARCH == "0"
-      
-      elif State = "SAVE/SHUTDOWN":
-        #Save and shutdown
-    
-    
-    def change_state(state_new): 
-      If state_new is in [HALT;SEARCH;SAVE/SHUTDOWN;INDEX]:
-        State == state_new
-        return "done"
-      else:
-        return "invalid input"
-    def insert_querrie(querrie):
-      #a funktion that can be called by GUI to give the querrie to the search state's loop.
-    
+    def handle_halt(self):
+        # Wait for commands or inputs
+        time.sleep(1)
+
+    def handle_index(self):
+        # Run indexing logic here
+        # Once done or interrupted:
+        self.change_state("HALT")
+
+    def handle_search(self):
+        while self.state == "SEARCH":
+            if self.current_query is None:
+                # Request query from GUI or input
+                time.sleep(0.5)
+                continue
+            # perform search with self.current_query
+            results = self.perform_search(self.current_query)
+            # Return results to GUI or caller
+            self.current_query = None
+        self.change_state("HALT")
+
+    def handle_save_shutdown(self):
+        # Save data and safely shutdown
+        self.running = False
+
+    def change_state(self, new_state):
+        allowed_states = ["HALT", "INDEX", "SEARCH", "SAVE_SHUTDOWN"]
+        if new_state in allowed_states:
+            self.state = new_state
+            return "done"
+        else:
+            return "invalid input"
+
+    def insert_query(self, query):
+        self.current_query = query
+
+    def perform_search(self, query):
+        # Placeholder for search logic
+        return ["results"]
+
+# Usage:
+# main = Main()
+# main.loop()
+# main.change_state("SEARCH")
+# main.insert_query("example query")
 
 
 
