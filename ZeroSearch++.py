@@ -1,11 +1,23 @@
-# ZeroSearch++.py
-
+# ZeroSearch++.py (modifications)
 import psycopg2
 import faiss
 import numpy as np
 import pickle
 import logging
-from config import DATABASE_CONFIG, FAISS_INDEX_PATH, OPENROUTER_API_KEY, OPENROUTER_MODEL, USE_API
+# --- Import for local LLM ---
+try:
+    from llama_cpp import Llama
+    LOCAL_LLM_AVAILABLE = True
+except ImportError:
+    LOCAL_LLM_AVAILABLE = False
+    logging.warning("llama-cpp-python not found. Local LLM reporting will not be available unless installed.")
+
+from config import (
+    DATABASE_CONFIG, FAISS_INDEX_PATH, OPENROUTER_API_KEY, OPENROUTER_MODEL, USE_API,
+    # --- Import local LLM config ---
+    USE_LOCAL_LLM, LOCAL_LLM_MODEL_PATH, LOCAL_LLM_N_CTX,
+    LOCAL_LLM_N_THREADS, LOCAL_LLM_PROMPT_TEMPLATE
+)
 import requests
 from ZeroScraper import get_fullpage
 from psycopg2.extras import RealDictCursor
@@ -19,6 +31,31 @@ logger = logging.getLogger(__name__)
 index = None
 url_labels = []
 EMBEDDING_MODEL = None
+# --- Global variable for local LLM ---
+LOCAL_LLM = None
+
+# --- Function to initialize the local LLM ---
+def get_local_llm():
+    """Lazy loading of the local LLM."""
+    global LOCAL_LLM
+    if LOCAL_LLM is None and USE_LOCAL_LLM and LOCAL_LLM_AVAILABLE:
+        try:
+            logger.info(f"Loading local LLM from {LOCAL_LLM_MODEL_PATH}...")
+            # Initialize the LLM. Adjust parameters as needed.
+            # n_gpu_layers=-1 attempts to offload all layers to GPU if available (requires cuBLAS).
+            LOCAL_LLM = Llama(
+                model_path=LOCAL_LLM_MODEL_PATH,
+                n_ctx=LOCAL_LLM_N_CTX,
+                n_threads=LOCAL_LLM_N_THREADS,
+                # n_gpu_layers=-1, # Uncomment if you want to use GPU acceleration
+                verbose=False # Reduce llama-cpp logs
+            )
+            logger.info("Local LLM loaded successfully.")
+        except Exception as e:
+            logger.error(f"Failed to load local LLM: {e}")
+            LOCAL_LLM = None # Ensure it stays None on failure
+    return LOCAL_LLM
+
 
 def get_embedding_model():
     """Lazy loading of the embedding model to avoid unnecessary loads."""
@@ -79,25 +116,20 @@ def reload_index():
 def search(query, amount=10):
     """
     Search for similar documents using FAISS.
-    
     Args:
         query (str): Search query
         amount (int): Number of results to return
-        
     Returns:
         list: List of URLs matching the query
     """
     global index, url_labels
-    
     if index is None or not url_labels:
         if not initialize_search():
             logger.error("Failed to initialize search")
             return []
-
     # Embed the query using cached model
     model = get_embedding_model()
     query_embedding = model.encode([query], convert_to_numpy=True).astype('float32')
-    
     # Search the index
     try:
         distances, indices = index.search(query_embedding, amount)
@@ -110,26 +142,22 @@ def search(query, amount=10):
 def get_full_text_for_report(urls):
     """
     Get full text for URLs, either from DB or by scraping.
-    
     Args:
         urls (list): List of URLs to get text for
-        
     Returns:
         str: Concatenated full texts
     """
     conn = get_db_connection()
     cursor = conn.cursor(cursor_factory=RealDictCursor)
     full_texts = []
-    
     try:
         for url in urls:
             # Check if full text already exists in DB
             cursor.execute(
-                "SELECT full_text FROM scraped_data WHERE url = %s", 
+                "SELECT full_text FROM scraped_data WHERE url = %s",
                 (url,)
             )
             row = cursor.fetchone()
-            
             if row and row['full_text']:
                 full_texts.append(row['full_text'])
                 logger.debug(f"Using cached full text for {url}")
@@ -152,39 +180,38 @@ def get_full_text_for_report(urls):
     finally:
         cursor.close()
         conn.close()
-    
-    return "\n\n".join(full_texts)
+    return "\n\n---\n\n".join(full_texts) # Join with separators
 
 def generate_report_with_api(text):
     """
     Generate report using OpenRouter API.
-    
     Args:
         text (str): Text to generate report from
-        
     Returns:
         str: Generated report
     """
     if not OPENROUTER_API_KEY:
         logger.error("OpenRouter API key not configured")
         return "API key not configured"
-    
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
         "Content-Type": "application/json"
     }
-    
+    # Use the prompt template from config if available, otherwise default
+    prompt = LOCAL_LLM_PROMPT_TEMPLATE.format(text=text) if '{text}' in LOCAL_LLM_PROMPT_TEMPLATE else f"Compile the following information into a comprehensive report:\n{text}"
+
     payload = {
         "model": OPENROUTER_MODEL,
         "messages": [
             {
                 "role": "user",
-                "content": f"Compile the following information into a comprehensive report:\n\n{text}"
+                "content": prompt
             }
-        ]
+        ],
+         "max_tokens": 2048 # Adjust as needed
     }
-    
     try:
+        # Ensure the URL is correct (remove trailing space if present in original)
         response = requests.post(
             "https://openrouter.ai/api/v1/chat/completions",
             headers=headers,
@@ -196,41 +223,64 @@ def generate_report_with_api(text):
         return result['choices'][0]['message']['content']
     except Exception as e:
         logger.error(f"Error calling OpenRouter API: {e}")
-        return f"Error generating report: {str(e)}"
+        return f"Error generating report via API: {str(e)}"
 
+# --- Modified generate_report_locally function ---
 def generate_report_locally(text):
     """
-    Generate report using local model (placeholder).
-    
+    Generate report using a local LLM.
     Args:
         text (str): Text to generate report from
-        
     Returns:
         str: Generated report
     """
-    # This is a placeholder - in a real implementation you would
-    # use a local LLM like llama.cpp or similar
-    return f"LOCAL MODEL REPORT (not implemented):\n\n{text[:500]}..."
+    if not USE_LOCAL_LLM:
+        return "Local LLM usage is disabled in config."
+    if not LOCAL_LLM_AVAILABLE:
+         return "Local LLM library (e.g., llama-cpp-python) is not installed."
+
+    llm = get_local_llm()
+    if llm is None:
+        return "Failed to load local LLM. Check logs and configuration."
+
+    try:
+        # Use the prompt template from config if available, otherwise default
+        prompt = LOCAL_LLM_PROMPT_TEMPLATE.format(text=text) if '{text}' in LOCAL_LLM_PROMPT_TEMPLATE else f"Compile the following information into a comprehensive report:\n{text}"
+
+        logger.info("Generating report using local LLM...")
+        # Generate the report
+        # Adjust parameters like max_tokens, temperature, top_p as needed
+        output = llm(
+            prompt,
+            max_tokens=2048, # Adjust based on your needs/model capacity
+            temperature=0.7,
+            top_p=0.9,
+            echo=False,
+            stop=[] # Add stop sequences if needed
+        )
+        report_text = output['choices'][0]['text']
+        logger.info("Local LLM report generation completed.")
+        return report_text.strip() # Return the generated text, stripped of leading/trailing whitespace
+
+    except Exception as e:
+        error_msg = f"Error generating report with local LLM: {e}"
+        logger.error(error_msg, exc_info=True) # Log the full traceback
+        return error_msg
 
 def report(urls):
     """
     Generate a comprehensive report from a list of URLs.
-    
     Args:
         urls (list): List of URLs to generate report from
-        
     Returns:
         str: Generated report
     """
     if not urls:
         return "No URLs provided for report generation"
-    
     # Get full text for all URLs
     full_text = get_full_text_for_report(urls)
-    
     if not full_text:
         return "Failed to retrieve content for report generation"
-    
     # Generate report based on configuration
     if USE_API:
         logger.info("Generating report using OpenRouter API")
@@ -239,5 +289,5 @@ def report(urls):
         logger.info("Generating report using local model")
         return generate_report_locally(full_text)
 
-# Initialize on module load
+# Initialize on module load (optional logging)
 logger.info("ZeroSearch++ module loaded")
