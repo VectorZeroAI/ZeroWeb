@@ -1,6 +1,10 @@
 OPENROUTER_API_KEY = "your_API_key_Here"
 OPENROUTER_MODEL = "tngtech/deepseek-r1t2-chimera:free"
-USE_API = True  # Set to False for local reports (not fully implemented)
+USE_API = True  # Set to False for local reports 
+USE_LOCAL_LLM = False
+LOCAL_LLM_MODEL_PATH = "input path to your model here."
+LOCAL_LLM_N_CTX = 2048
+LOCAL_LLM_N_THREADS = 8
 
 # Threading configuration (use integers, not strings)
 THREAD_AMOUNT_PER_CORE = 30  # Integer value
