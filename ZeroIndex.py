@@ -80,7 +80,7 @@ def reconstruct_index():
         - Skip otherwise.
     """
     global index, url_labels
-
+    get_model()
     rows = load_all_rows()
     embeddings = []
     url_labels = []
