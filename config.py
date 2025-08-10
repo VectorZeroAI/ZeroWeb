@@ -15,6 +15,7 @@ MAX_URLS_PER_DOMAIN = 1000  # I recommend increasing
 
 # Database configuration (PostgreSQL DB) look in for a guide on Youtube
 DATABASE_CONFIG = {
+    options = f"-c search_path={SCHEMA_NAME}"
     'dbname': 'your_database_name',
     'user': 'your_database_user',
     'password': 'your_password',
