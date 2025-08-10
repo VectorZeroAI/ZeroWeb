@@ -105,90 +105,78 @@ class ZeroMain:
         """Handle INDEX state - run indexing process"""
         logger.info("Entering INDEX state")
         self.gui_update_status("Starting indexing process...")
-        indexing_success = False # Flag to track success for final notification
+        indexing_success = False
         try:
-            # Get domains from GUI or use defaults/prior set value
             if self.current_domains is None:
                 self.current_domains = self.gui_request_domains()
             if not self.current_domains:
                 logger.warning("No domains provided for indexing")
                 self.gui_update_status("No domains provided for indexing")
-                # Stay in HALT or let caller decide state change?
-                # For now, transition back to HALT automatically
                 self.change_state("HALT")
                 return
-
             self.gui_update_status(f"Indexing domains: {', '.join(self.current_domains)}")
             logger.info(f"Domains to index: {self.current_domains}")
 
-            # Indicate indexing is active
             self.indexing_in_progress = True
 
-            # --- Start the scraping process ---
-            # This is the long-running part. ZeroSkan handles its own DB and threading.
-            # Run scraping in a separate thread to prevent blocking the main loop
-            # The main loop will stay in the INDEX state until scraping finishes or is interrupted.
-            # We need a way to signal completion or error from the thread.
-            # Using a threading event or checking a flag might be suitable.
-            # For simplicity, we'll run it directly but note that it blocks.
-            # A better approach is to refactor start_scraping to be non-blocking or run it in a thread managed by ZeroMain.
+            # --- Initialize progress tracking variables ---
+            total_urls_to_scrape = 0
+            scraped_count = 0
+            last_reported_progress = 0.0
 
-            # Option 1: Run directly (blocks the loop until done)
-            # start_scraping(self.current_domains)
+            # --- Define the progress callback function ---
+            def scraping_progress_callback(current_count, success_flag):
+                nonlocal scraped_count, total_urls_to_scrape, last_reported_progress
+                scraped_count = current_count
+                if total_urls_to_scrape > 0:
+                    progress_percent = (scraped_count / total_urls_to_scrape) * 100
+                    # Only update GUI if progress has changed significantly (e.g., by 1%) to avoid excessive updates
+                    if progress_percent - last_reported_progress >= 1.0 or progress_percent >= 100:
+                         self.gui_update_progress(progress_percent)
+                         last_reported_progress = progress_percent
+                         self.gui_update_status(f"Indexing... {scraped_count}/{total_urls_to_scrape} ({progress_percent:.1f}%)")
 
-            # Option 2: Run in a thread (non-blocking, but requires state management)
-            # Let's use a thread and wait for it, but allow checking for shutdown.
-            scraping_finished_event = threading.Event()
-            def scraping_thread_target():
-                try:
-                    start_scraping(self.current_domains)
-                except Exception as e:
-                     logger.error(f"Error in scraping thread: {e}")
-                finally:
-                    scraping_finished_event.set()
+            # --- Start scraping and get total URL count ---
+            self.gui_update_status("Discovering and queuing URLs...")
+            # Pass the callback to start_scraping
+            total_urls_to_scrape = start_scraping(self.current_domains, progress_cb=scraping_progress_callback)
 
-            scraping_thread = threading.Thread(target=scraping_thread_target, daemon=True)
-            scraping_thread.start()
+            if self.state != "INDEX": # Check if interrupted during scraping setup/start
+                logger.info("Indexing interrupted during setup.")
+                self.gui_update_status("Indexing interrupted.")
+                self.indexing_in_progress = False
+                self.current_domains = None
+                self.gui_notify_indexing_complete()
+                return
 
-            # Wait for scraping to finish or shutdown requested
-            while not scraping_finished_event.is_set() and self.state == "INDEX":
-                 time.sleep(0.5) # Check periodically
-
-            if self.state != "INDEX": # If state changed (e.g., shutdown requested during scraping)
-                 logger.info("Indexing interrupted.")
-                 self.gui_update_status("Indexing interrupted.")
-                 self.indexing_in_progress = False
-                 self.current_domains = None
-                 self.gui_notify_indexing_complete() # Notify GUI of interruption
-                 return # Exit handle_index early
+            # --- Ensure final progress update after scraping completes ---
+            if total_urls_to_scrape > 0:
+                 final_progress = (scraped_count / total_urls_to_scrape) * 100
+                 self.gui_update_progress(final_progress)
+                 self.gui_update_status(f"Scraping completed: {scraped_count}/{total_urls_to_scrape} ({final_progress:.1f}%)")
+            else:
+                 self.gui_update_status("Scraping phase completed.")
 
             # --- Reconstruct the FAISS index after scraping ---
             self.gui_update_status("Reconstructing search index...")
             logger.info("Starting FAISS index reconstruction...")
             reconstruct_index()
             logger.info("FAISS index reconstruction completed.")
-
             self.gui_update_status("Indexing completed successfully")
             logger.info("Indexing process completed successfully")
             indexing_success = True
 
         except Exception as e:
             error_msg = f"Error during indexing: {e}"
-            logger.error(error_msg, exc_info=True) # Log full traceback
+            logger.error(error_msg, exc_info=True)
             self.gui_update_status(f"Indexing failed: {str(e)}")
-            # indexing_success remains False
         finally:
-            # --- Cleanup and State Transition ---
             self.indexing_in_progress = False
-            # Reset domains for next indexing session
             self.current_domains = None
-            # Explicitly notify GUI that the potentially long process is done
-            # This is better than GUI polling the state
             self.gui_notify_indexing_complete()
-            # Transition back to HALT regardless of success/failure
-            # The GUI can decide what to do next based on status messages or the notification
             self.change_state("HALT")
             logger.debug("Exited INDEX state, returned to HALT")
+
 
     def handle_search(self):
         """Handle SEARCH state - perform semantic search"""
@@ -287,12 +275,10 @@ class ZeroMain:
         self.current_domains = domains
         logger.info(f"Domains set for indexing: {domains}")
 
-    def start_indexing(self, domains: List[str] = None):
+        def start_indexing(self, domains: List[str] = None):
         """Start the indexing process"""
-        # Optionally set domains if provided
         if domains:
             self.set_domains(domains)
-        # Transition to INDEX state, which triggers handle_index
         self.change_state("INDEX")
 
     def start_search(self, query: str = None, ai_mode: bool = None):
