@@ -1,6 +1,7 @@
 # ZeroScraper.py
 
 import requests
+from validators import url as validate_url
 from urllib.robotparser import RobotFileParser
 from urllib.parse import urlparse, urljoin
 from bs4 import BeautifulSoup
@@ -115,10 +116,8 @@ def get_URL_list(domain):
 
     common_crawl_urls = get_common_crawl_urls(domain, crawl_delay=crawl_delay)
 
-    filtered_urls = [
-        url for url in common_crawl_urls
-        if is_allowed_by_robots(parser, url)
-    ]
+    filtered_urls = [url for url in common_crawl_urls 
+                     if validate_url(url) and is_allowed_by_robots(parser, url)]
 
     return filtered_urls, crawl_delay
 
