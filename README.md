@@ -5,7 +5,16 @@ This programm uses a web crawler to index the user defined domains.
 
 THE APP DOESNT PROVIDE ANY INTERNET IDENTITY CONSEALMENT, USERS PRIVASY IS USERS RESPONSIBILITY!!
 
-By default, it indexes "Wikipedia, arXiv, github, reddit"
+By default, it indexes " english Wikipedia, arXiv"
+
+
+
+
+
+
+
+
+
 
 
 ---
