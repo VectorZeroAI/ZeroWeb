@@ -25,6 +25,10 @@ logger = logging.getLogger(__name__)
 # Global control flag for graceful shutdown
 shutdown_event = threading.Event()
 
+# --- Add a global variable to hold the progress callback ---
+progress_callback = None
+
+# --- Modify initDB function signature (no change needed for schema, just clarity) ---
 def initDB(db_path=None): # db_path is unused based on current implementation, kept for signature compatibility
     """
     Initializes the PostgreSQL database for storing scraped data.
@@ -35,18 +39,12 @@ def initDB(db_path=None): # db_path is unused based on current implementation, k
     try:
         conn = psycopg2.connect(**DATABASE_CONFIG)
         cursor = conn.cursor()
-
         # Ensure the schema exists
         cursor.execute(f"CREATE SCHEMA IF NOT EXISTS {SCHEMA_NAME};")
         logger.info(f"Schema '{SCHEMA_NAME}' ensured to exist.")
-
         # Set the search path for this session/connection to the schema
-        # This makes subsequent table operations apply to this schema
-        # unless fully qualified names are used.
         cursor.execute(f"SET LOCAL search_path TO {SCHEMA_NAME};")
-
         # Create the table within the specified schema context
-        # Using IF NOT EXISTS to prevent errors if the table already exists in the schema
         create_table_query = """
         CREATE TABLE IF NOT EXISTS scraped_data (
             id SERIAL PRIMARY KEY,
@@ -60,60 +58,49 @@ def initDB(db_path=None): # db_path is unused based on current implementation, k
         cursor.execute(create_table_query)
         conn.commit()
         logger.info(f"Database table 'scraped_data' initialized within schema '{SCHEMA_NAME}'.")
-
     except psycopg2.Error as e:
         error_msg = f"Database initialization error: {e}"
         logger.error(error_msg)
         if conn:
-            conn.rollback() # Rollback in case of error during setup
+            conn.rollback()
     except Exception as e:
         logger.error(f"Unexpected error during DB initialization: {e}", exc_info=True)
     finally:
-        # Ensure resources are closed
         if cursor:
             cursor.close()
         if conn:
-            conn.close() # Commit was called inside the try block if successful
+            conn.close()
 
 
+# --- Modify insert_urls_into_db to return the count of inserted/total URLs ---
 def insert_urls_into_db(domains):
     """
     Inserts URLs from domains into the DB using get_URL_list.
     Assumes the schema and table are already set up correctly.
+    Returns the total count of URLs attempted to be inserted.
     """
     conn = None
     cursor = None
+    total_urls = 0
     try:
         conn = psycopg2.connect(**DATABASE_CONFIG)
-        # Optionally set schema context for this connection if not handled globally
-        # cursor = conn.cursor()
-        # cursor.execute(f"SET LOCAL search_path TO {SCHEMA_NAME};")
-        # conn.commit() # Commit the search_path setting if needed for the session
-        # cursor.close()
-        # Better: Assume DATABASE_CONFIG or connection defaults handle schema,
-        # or explicitly set it per operation if needed.
-        # For simplicity here, rely on setup or config.
-
-        # Reconnect or use existing connection appropriately
-        # It's safer to manage the schema context explicitly if not sure about config
         cursor = conn.cursor()
         cursor.execute(f"SET LOCAL search_path TO {SCHEMA_NAME};")
-
         for domain in domains:
             logger.info(f"Fetching URLs for domain: {domain}")
             urls, delay = get_URL_list(domain)
+            total_urls += len(urls) # Increment total attempted URLs
             for url in urls:
                 try:
-                    # Use ON CONFLICT to avoid errors if URL already exists
                     cursor.execute(
                         "INSERT INTO scraped_data (url, crawl_delay) VALUES (%s, %s) ON CONFLICT (url) DO NOTHING",
                         (url, delay)
                     )
-                except psycopg2.Error as e: # Catch database-specific errors
+                except psycopg2.Error as e:
                     logger.error(f"Database error inserting URL {url}: {e}")
-                except Exception as e: # Catch other potential errors from get_URL_list
+                except Exception as e:
                     logger.error(f"Error processing URL {url} from {domain}: {e}")
-            conn.commit() # Commit after processing each domain's URLs
+            conn.commit()
     except psycopg2.Error as e:
         error_msg = f"Database error in insert_urls_into_db: {e}"
         logger.error(error_msg)
@@ -128,7 +115,8 @@ def insert_urls_into_db(domains):
             cursor.close()
         if conn:
             conn.close()
-    logger.info("All URLs insertion attempt completed.")
+    logger.info(f"All URLs insertion attempt completed. Total URLs attempted: {total_urls}")
+    return total_urls # Return the total count
 
 
 def get_unscraped_rows(batch_size=1000):
@@ -219,15 +207,13 @@ def update_snippet_in_db(row_id, snippet):
             conn.close()
 
 
-# --- Placeholder/Unchanged Functions (for context) ---
-# The functions below are not directly related to schema creation but are part of the file.
-# Their database interactions now implicitly rely on the schema being correctly set up
-# or the DATABASE_CONFIG handling it, or they explicitly set the search_path as shown above.
 
-def scrape_worker(url_queue):
+def scrape_worker(url_queue, progress_lock, processed_count):
     """
     Worker thread function that scrapes snippets.
+    Reports progress via shared variables and a callback.
     """
+    global progress_callback # Access the global callback
     while not shutdown_event.is_set():
         try:
             row = url_queue.get(timeout=1)
@@ -236,14 +222,31 @@ def scrape_worker(url_queue):
         url = row['url']
         row_id = row['id']
         delay = row.get('crawl_delay', 1.0)
+        success = False
         try:
             _, snippet = get_snippet(url)
-            update_snippet_in_db(row_id, snippet) # This now uses the schema context
+            update_snippet_in_db(row_id, snippet)
             logger.debug(f"Scraped snippet for {url}")
+            success = True
         except Exception as e:
             logger.error(f"Error scraping {url}: {e}")
-        time.sleep(delay)
-        url_queue.task_done()
+        finally:
+            # Always mark task as done and update progress
+            url_queue.task_done()
+            with progress_lock:
+                processed_count.value += 1
+                current_count = processed_count.value
+            # Call the progress callback if set
+            if progress_callback:
+                try:
+                    # Pass the current count and a flag indicating success if needed
+                    progress_callback(current_count, success)
+                except Exception as e:
+                    logger.error(f"Error calling progress callback: {e}")
+
+            time.sleep(delay) # Respect crawl delay
+
+
 
 def start_scraping_core(rows):
     """
@@ -279,66 +282,82 @@ def start_scraping_process(rows):
     process.start()
     return process
 
-def continuous_scraping_worker():
+# --- Modify continuous_scraping_worker to accept and use shared state for progress ---
+def continuous_scraping_worker(progress_lock, processed_count):
     """
     Worker function that continuously fetches batches and processes them.
     This replaces the static batch approach for better dynamic load balancing.
+    Uses shared state for progress tracking.
     """
+    global progress_callback # Access the global callback
     while not shutdown_event.is_set():
-        # Fetch a new batch of unscraped rows
-        # This function now correctly uses the schema
         rows = get_unscraped_rows(batch_size=100)
         if not rows:
             logger.info("No more unscraped rows found. Waiting before retry...")
-            time.sleep(5)  # Wait before retrying
+            time.sleep(5)
             continue
         logger.info(f"Processing batch of {len(rows)} URLs")
-        # Process this batch
         url_queue = Queue()
         for row in rows:
             url_queue.put(row)
-        # Start threads for this batch
+
+        # --- Use threading instead of multiprocessing for threads within a process ---
+        # --- Share the lock and counter with threads ---
         threads = []
-        for _ in range(SCRAPING_THREADS_PER_PROCESS):
-            t = threading.Thread(target=scrape_worker, args=(url_queue,))
+        # Number of threads is defined in config
+        num_threads = SCRAPING_THREADS_PER_PROCESS
+        for _ in range(num_threads):
+            t = threading.Thread(target=scrape_worker, args=(url_queue, progress_lock, processed_count))
             t.start()
             threads.append(t)
-        # Wait for completion or shutdown
+
         try:
-            url_queue.join()
+            url_queue.join() # Wait for all tasks in the queue to be processed
         except KeyboardInterrupt:
             shutdown_event.set()
+
         # Join threads
         for t in threads:
             t.join()
+
         if shutdown_event.is_set():
             break
 
-def start_scraping_process_continuous():
+def start_scraping_process_continuous(progress_lock, processed_count):
     """
     Starts a process that continuously fetches and processes batches.
+    Passes shared state for progress tracking.
     """
-    process = mp.Process(target=continuous_scraping_worker)
+    # Pass the shared lock and counter to the worker function
+    process = mp.Process(target=continuous_scraping_worker, args=(progress_lock, processed_count))
     process.start()
     return process
 
-def start_scraping(domains):
+def start_scraping(domains, progress_cb=None):
     """
     Main scraping orchestrator using continuous batch processing.
+    Accepts a progress callback function: progress_cb(current_count, success_flag).
     """
+    global progress_callback
     logger.info("Starting scraping process...")
-    # Initialize DB schema and table
-    initDB() # This now ensures schema and table exist
-    # Insert URLs into DB (now uses schema context)
-    insert_urls_into_db(domains)
-    # Start continuous scraping processes
+    progress_callback = progress_cb # Set the global callback
+
+    initDB()
+    total_urls = insert_urls_into_db(domains) # Get total URL count
+
+    # --- Create shared state for progress tracking ---
+    manager = mp.Manager()
+    progress_lock = manager.Lock()
+    processed_count = manager.Value('i', 0) # Shared integer counter
+
     processes = []
     for _ in range(MAX_SCRAPING_PROCESSES):
-        p = start_scraping_process_continuous()
+        # Pass the shared lock and counter to the process starter
+        p = start_scraping_process_continuous(progress_lock, processed_count)
         processes.append(p)
-        time.sleep(0.1)  # Small delay to stagger process starts
+        time.sleep(0.1)
+
     try:
-        # Wait for all processes
         for p in processes:
             p.join()
     except KeyboardInterrupt:
@@ -347,7 +366,20 @@ def start_scraping(domains):
         for p in processes:
             p.terminate()
             p.join()
+
     logger.info("All scraping processes completed.")
+    # Ensure final progress update if callback exists
+    if progress_callback and total_urls > 0:
+        try:
+             # Get the final count one last time
+             with progress_lock:
+                 final_count = processed_count.value
+             progress_callback(final_count, True) # Final call, assume success for completion signal
+        except Exception as e:
+             logger.error(f"Error calling final progress callback: {e}")
+
+    # Return total_urls for use by the caller (ZeroMain)
+    return total_urls
 
 def end_scraping():
     """
