@@ -5,14 +5,14 @@ This programm uses a web crawler to index the user defined domains.
 
 THE APP DOESNT PROVIDE ANY INTERNET IDENTITY CONSEALMENT, USERS PRIVASY IS USERS RESPONSIBILITY!!
 
-By default, it indexes " english Wikipedia, arXiv"
+So, you can ether start the programm in console mode, or in graphics mode. 
+I spend way to much time designing the GUI, so you better use it! 
 
+But whatever, to start the app, you need to run the file "ZeroDoor.py", 
+wich runs the app in graphic mode. 
 
-
-
-
-
-
+If your feeling nerdy, you can launch the app in console only. 
+For it, you need to first run the init
 
 
 
