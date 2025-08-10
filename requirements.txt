@@ -1,0 +1,13 @@
+faiss-cpu #if you only have GPU
+#faiss-gpu #if you have GPU
+sentence-transformers
+psycopg2-binary
+requests
+beautifulsoup4
+trafilatura
+tqdm
+tk
+llama-cpp-python  # Optional for local LLM
+validators
+filelock
+ratelimiter
