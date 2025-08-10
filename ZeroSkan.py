@@ -3,6 +3,7 @@ import os
 import time
 import threading
 import multiprocessing as mp
+from multiprocessing import Event
 from queue import Queue
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -23,7 +24,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Global control flag for graceful shutdown
-shutdown_event = threading.Event()
+shutdown_event = Event()
 
 # --- Add a global variable to hold the progress callback ---
 progress_callback = None
